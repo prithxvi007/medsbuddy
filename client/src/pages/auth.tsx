@@ -6,10 +6,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, UserPlus, LogIn } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LogIn, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { loginSchema, signupSchema, type LoginData, type SignupData } from "@shared/schema";
+import {
+  loginSchema,
+  signupSchema,
+  type LoginData,
+  type SignupData,
+} from "@shared/schema";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function AuthPage() {
@@ -17,7 +28,6 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { login, signup, isLoginLoading, isSignupLoading, isLoggedIn } = useAuth();
 
-  // Redirect if already logged in
   useEffect(() => {
     if (isLoggedIn) {
       setLocation("/dashboard");
@@ -45,19 +55,11 @@ export default function AuthPage() {
   });
 
   const handleLogin = (data: LoginData) => {
-    login(data, {
-      onSuccess: () => {
-        setLocation("/dashboard");
-      },
-    });
+    login(data); // Redirect handled by useEffect
   };
 
   const handleSignup = (data: SignupData) => {
-    signup(data, {
-      onSuccess: () => {
-        setLocation("/dashboard");
-      },
-    });
+    signup(data); // Redirect handled by useEffect
   };
 
   return (
@@ -75,10 +77,9 @@ export default function AuthPage() {
             {isLogin ? "Welcome Back" : "Create Account"}
           </CardTitle>
           <p className="text-gray-600">
-            {isLogin 
-              ? "Sign in to your MedsBuddy account" 
-              : "Join MedsBuddy to manage your medications"
-            }
+            {isLogin
+              ? "Sign in to your MedsBuddy account"
+              : "Join MedsBuddy to manage your medications"}
           </p>
         </CardHeader>
 
@@ -93,9 +94,6 @@ export default function AuthPage() {
                   placeholder="Enter your email"
                   {...loginForm.register("email")}
                 />
-                {loginForm.formState.errors.email && (
-                  <p className="text-sm text-red-600 mt-1">{loginForm.formState.errors.email.message}</p>
-                )}
               </div>
 
               <div>
@@ -106,9 +104,6 @@ export default function AuthPage() {
                   placeholder="Enter your password"
                   {...loginForm.register("password")}
                 />
-                {loginForm.formState.errors.password && (
-                  <p className="text-sm text-red-600 mt-1">{loginForm.formState.errors.password.message}</p>
-                )}
               </div>
 
               <Button
@@ -121,7 +116,10 @@ export default function AuthPage() {
               </Button>
             </form>
           ) : (
-            <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
+            <form
+              onSubmit={signupForm.handleSubmit(handleSignup)}
+              className="space-y-4"
+            >
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="firstName">First Name</Label>
@@ -130,9 +128,6 @@ export default function AuthPage() {
                     placeholder="John"
                     {...signupForm.register("firstName")}
                   />
-                  {signupForm.formState.errors.firstName && (
-                    <p className="text-sm text-red-600 mt-1">{signupForm.formState.errors.firstName.message}</p>
-                  )}
                 </div>
                 <div>
                   <Label htmlFor="lastName">Last Name</Label>
@@ -141,9 +136,6 @@ export default function AuthPage() {
                     placeholder="Doe"
                     {...signupForm.register("lastName")}
                   />
-                  {signupForm.formState.errors.lastName && (
-                    <p className="text-sm text-red-600 mt-1">{signupForm.formState.errors.lastName.message}</p>
-                  )}
                 </div>
               </div>
 
@@ -154,9 +146,6 @@ export default function AuthPage() {
                   placeholder="johndoe"
                   {...signupForm.register("username")}
                 />
-                {signupForm.formState.errors.username && (
-                  <p className="text-sm text-red-600 mt-1">{signupForm.formState.errors.username.message}</p>
-                )}
               </div>
 
               <div>
@@ -167,14 +156,15 @@ export default function AuthPage() {
                   placeholder="john.doe@example.com"
                   {...signupForm.register("email")}
                 />
-                {signupForm.formState.errors.email && (
-                  <p className="text-sm text-red-600 mt-1">{signupForm.formState.errors.email.message}</p>
-                )}
               </div>
 
               <div>
                 <Label htmlFor="role">Role</Label>
-                <Select onValueChange={(value) => signupForm.setValue("role", value as "patient" | "caretaker")}>
+                <Select
+                  onValueChange={(value) =>
+                    signupForm.setValue("role", value as "patient" | "caretaker")
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
@@ -183,9 +173,6 @@ export default function AuthPage() {
                     <SelectItem value="caretaker">Caretaker</SelectItem>
                   </SelectContent>
                 </Select>
-                {signupForm.formState.errors.role && (
-                  <p className="text-sm text-red-600 mt-1">{signupForm.formState.errors.role.message}</p>
-                )}
               </div>
 
               <div>
@@ -196,9 +183,6 @@ export default function AuthPage() {
                   placeholder="Create a secure password"
                   {...signupForm.register("password")}
                 />
-                {signupForm.formState.errors.password && (
-                  <p className="text-sm text-red-600 mt-1">{signupForm.formState.errors.password.message}</p>
-                )}
               </div>
 
               <Button
@@ -206,7 +190,9 @@ export default function AuthPage() {
                 disabled={isSignupLoading}
                 className="w-full bg-green-600 hover:bg-green-700"
               >
-                {isSignupLoading ? <LoadingSpinner size="sm" className="mr-2" /> : null}
+                {isSignupLoading ? (
+                  <LoadingSpinner size="sm" className="mr-2" />
+                ) : null}
                 Create Account
               </Button>
             </form>
