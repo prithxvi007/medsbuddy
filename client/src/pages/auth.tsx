@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocation } from "wouter";
@@ -18,10 +18,11 @@ export default function AuthPage() {
   const { login, signup, isLoginLoading, isSignupLoading, isLoggedIn } = useAuth();
 
   // Redirect if already logged in
-  if (isLoggedIn) {
-    setLocation("/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (isLoggedIn) {
+      setLocation("/dashboard");
+    }
+  }, [isLoggedIn, setLocation]);
 
   const loginForm = useForm<LoginData>({
     resolver: zodResolver(loginSchema),

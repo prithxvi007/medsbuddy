@@ -265,6 +265,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Database query endpoint for development/admin use
+  app.post('/api/db/query', async (req, res) => {
+    try {
+      const { query } = req.body;
+      
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ message: 'Query is required' });
+      }
+
+      // Basic security check - only allow SELECT, COUNT queries for safety
+      const trimmedQuery = query.trim().toUpperCase();
+      if (!trimmedQuery.startsWith('SELECT') && !trimmedQuery.startsWith('WITH')) {
+        return res.status(403).json({ message: 'Only SELECT queries are allowed' });
+      }
+
+      const { db } = await import('./db');
+      
+      // Execute raw SQL query
+      const rawDb = (db as any)._.session.db;
+      const statement = rawDb.prepare(query);
+      const rows = statement.all();
+      
+      // Get column names
+      const columns = statement.columns().map((col: any) => col.name);
+      
+      // Convert rows to array format for easier display
+      const rowsArray = rows.map((row: any) => columns.map(col => row[col]));
+      
+      res.json({
+        columns,
+        rows: rowsArray,
+        count: rows.length
+      });
+    } catch (error) {
+      console.error('Database query error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : 'Database query failed' 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
