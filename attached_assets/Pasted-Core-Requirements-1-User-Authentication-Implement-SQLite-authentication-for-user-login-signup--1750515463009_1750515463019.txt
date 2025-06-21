@@ -1,0 +1,45 @@
+Core Requirements:
+1. User Authentication:
+○ Implement SQLite authentication for user login/signup functionality.
+2. Medication Management:
+○ Implement CRUD operations for managing medications:
+■ Add medications (name, dosage, frequency).
+■ Mark medications as taken for the day.
+■ View medication list.
+○ Display a simple adherence percentage for the medications.
+Phase 1 (Required) Features:
+1. SQLite Authentication: Implement user login/signup with SQLite authentication.
+2. Basic CRUD for Medications:
+○ Add medications with relevant details (name, dosage, frequency).
+○ Mark medications as taken for the day.
+○ View medications in a list format.
+3. Dashboard Implementation:
+○ Connect one dashboard (either patient or caretaker) to real data from SQLite.
+Phase 2 (Optional) Features:
+1. Real-Time Updates: Implement real-time updates for caretaker-patient interactions.
+2. Adherence Tracking: Implement basic adherence tracking functionality.
+
+Phase 3 (Bonus) Features:
+1. File Uploads: Implement file upload functionality for medication proof (photo upload).
+2. Deployment (Bonus): Deploy the app to Vercel or Netlify.
+Evaluation Criteria:
+● Code Organization: Evaluate how well the code is structured and maintained.
+● Component Reusability: Review how components are reused across the app.
+● State Management: Evaluate the state management approach and its scalability.
+● Error Handling: Ensure proper error handling for API calls and edge cases.
+● Performance Considerations: Evaluate the app's performance, especially with
+re-renders.
+● Security Awareness: Check for input sanitization and secure handling of user data.
+● TypeScript Usage: Although TypeScript is not used, proper JavaScript usage will be
+assessed.
+Additional Requirements:
+● Form Validation: Implement proper form validation with meaningful error messages.
+● Loading/Error States: Handle loading and error states properly for user experience.
+● Version Control: Use Git for version control with meaningful commit messages.
+● Testing: Write 2-3 meaningful tests using Vitest for the app's functionalities.
+● README: Include a README file with setup instructions for running the app locally.
+
+Submission Guidelines:
+● Submit your project files, including the codebase, tests, and README.
+● Ensure your repository is well-structured, and follow good coding practices.
+● Ensure the app is functional as per the requirements and that it runs without errors.
