@@ -1,10 +1,10 @@
-// server/routes.ts
+// routes.ts
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { drizzleStorage } from "./storage.drizzle";
-import { db, rawDB } from "./db";
+import { db } from "./db";
 import {
   loginSchema,
   signupSchema,
@@ -150,7 +150,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!query || typeof query !== "string") return res.status(400).json({ message: "Query required" });
       const q = query.trim().toUpperCase();
       if (!q.startsWith("SELECT") && !q.startsWith("WITH")) return res.status(403).json({ message: "Only SELECT queries allowed" });
-      const stmt = rawDB.prepare(query);
+      const raw = (db as any)._.session?.db;
+      if (!raw) return res.status(500).json({ message: "Database session not initialized" });
+      const stmt = raw.prepare(query);
       const rows = stmt.all();
       const cols = stmt.columns().map((c: any) => c.name);
       const formatted = rows.map((r: any) => cols.map(c => r[c]));
