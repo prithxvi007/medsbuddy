@@ -43,4 +43,4 @@ export interface IStorage {
   ): Promise<MedicationLog[]>;
 }
 
-export const storage: IStorage = drizzleStorage(db) as IStorage;
+export const storage: IStorage = drizzleStorage(db);

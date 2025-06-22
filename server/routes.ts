@@ -1,5 +1,4 @@
-// server/routes.ts
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -17,17 +16,20 @@ const storage = drizzleStorage(db);
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const SALT_ROUNDS = 10;
 
+// Custom request interface
 interface AuthenticatedRequest extends Request {
   userId: number;
 }
 
-function authenticateToken(req: any, res: any, next: any) {
+// Auth middleware
+function authenticateToken(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
   if (!token) return res.status(401).json({ message: "Access token required" });
+
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
-    req.userId = decoded.userId;
+    (req as AuthenticatedRequest).userId = decoded.userId;
     next();
   } catch {
     return res.status(403).json({ message: "Invalid or expired token" });
@@ -65,7 +67,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/me", authenticateToken, async (req, res) => {
     try {
-      const user = await storage.getUser(req.userId);
+      const userId = (req as AuthenticatedRequest).userId;
+      const user = await storage.getUser(userId);
       if (!user) return res.status(404).json({ message: "User not found" });
       res.json(user);
     } catch {
@@ -75,7 +78,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/medications", authenticateToken, async (req, res) => {
     try {
-      const medications = await storage.getMedicationsByUserId(req.userId);
+      const userId = (req as AuthenticatedRequest).userId;
+      const medications = await storage.getMedicationsByUserId(userId);
       res.json(medications);
     } catch {
       res.status(500).json({ message: "Internal server error" });
@@ -84,8 +88,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/medications", authenticateToken, async (req, res) => {
     try {
+      const userId = (req as AuthenticatedRequest).userId;
       const med = addMedicationSchema.parse(req.body);
-      const created = await storage.createMedication({ ...med, userId: req.userId, times: JSON.stringify(med.times) });
+      const created = await storage.createMedication({
+        ...med,
+        userId,
+        times: JSON.stringify(med.times),
+      });
       res.status(201).json(created);
     } catch (err) {
       if (err instanceof ZodError) return res.status(400).json({ message: "Validation", errors: err.errors });
@@ -95,9 +104,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/medications/:id", authenticateToken, async (req, res) => {
     try {
+      const userId = (req as AuthenticatedRequest).userId;
       const id = parseInt(req.params.id);
       const med = await storage.getMedication(id);
-      if (!med || med.userId !== req.userId) return res.status(404).json({ message: "Not found" });
+      if (!med || med.userId !== userId) return res.status(404).json({ message: "Not found" });
       await storage.deleteMedication(id);
       res.status(204).send();
     } catch {
@@ -107,13 +117,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/medications/:id/mark-taken", authenticateToken, async (req, res) => {
     try {
+      const userId = (req as AuthenticatedRequest).userId;
       const id = parseInt(req.params.id);
       const med = await storage.getMedication(id);
-      if (!med || med.userId !== req.userId) return res.status(404).json({ message: "Not found" });
+      if (!med || med.userId !== userId) return res.status(404).json({ message: "Not found" });
       const date = new Date().toISOString().split("T")[0];
-      const logs = await storage.getMedicationLogsForDate(req.userId, date);
+      const logs = await storage.getMedicationLogsForDate(userId, date);
       if (logs.some(l => l.medicationId === id)) return res.status(400).json({ message: "Already marked" });
-      const log = await storage.createMedicationLog({ medicationId: id, userId: req.userId, takenAt: new Date(), scheduledFor: date });
+      const log = await storage.createMedicationLog({
+        medicationId: id,
+        userId,
+        takenAt: new Date(),
+        scheduledFor: date,
+      });
       res.status(201).json(log);
     } catch {
       res.status(500).json({ message: "Internal server error" });
@@ -122,8 +138,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/medication-logs", authenticateToken, async (req, res) => {
     try {
-      const { startDate, endDate } = req.query;
-      const logs = await storage.getMedicationLogs(req.userId, startDate, endDate);
+      const userId = (req as AuthenticatedRequest).userId;
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: "startDate and endDate required" });
+      }
+      const logs = await storage.getMedicationLogs(userId, startDate, endDate);
       res.json(logs);
     } catch {
       res.status(500).json({ message: "Internal server error" });
@@ -132,13 +153,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/adherence", authenticateToken, async (req, res) => {
     try {
-      const meds = await storage.getMedicationsByUserId(req.userId);
+      const userId = (req as AuthenticatedRequest).userId;
+      const meds = await storage.getMedicationsByUserId(userId);
       const end = new Date().toISOString().split("T")[0];
       const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-      const logs = await storage.getMedicationLogs(req.userId, start, end);
+      const logs = await storage.getMedicationLogs(userId, start, end);
       const totalExpected = meds.length * 30;
       const adherence = totalExpected ? Math.round((logs.length / totalExpected) * 100) : 0;
-      res.json({ adherenceRate: adherence, totalExpectedDoses: totalExpected, totalTakenDoses: logs.length, period: `${start} to ${end}` });
+      res.json({
+        adherenceRate: adherence,
+        totalExpectedDoses: totalExpected,
+        totalTakenDoses: logs.length,
+        period: `${start} to ${end}`,
+      });
     } catch {
       res.status(500).json({ message: "Internal server error" });
     }
